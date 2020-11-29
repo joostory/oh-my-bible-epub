@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<html xmlns:epub="http://www.idpf.org/2007/ops" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <title>{{ title }}</title>
+</head>
+
+<body data-type="book">
+  <section data-type="content" data-pdf-bookmark="{{ title }}">
+    <div class="content" id="{{ id }}">
+      {{#each list}}
+        <h2 data-type="chapter" id="chapter{{ title }}">{{ title }}</h2>
+        <ol data-type="verse">
+          {{#each verses}}
+            <li>{{ content }}</li>
+          {{/each}}
+        </ol>
+      {{/each}}
+    </div>
+  </section>
+</body>
+
+</html>

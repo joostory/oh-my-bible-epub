@@ -1,0 +1,21 @@
+{
+  "name": "oh-my-bible-epub",
+  "version": "1.0.0",
+  "description": "Oh My Bible epub version",
+  "main": "src/app.js",
+  "scripts": {
+    "build": "node src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "holybible"
+  ],
+  "author": "Joo <joo@joostory.net>",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^7.1.1",
+    "epub-gen": "^0.1.0",
+    "handlebars": "^4.7.6",
+    "sqlite3": "^5.0.0"
+  }
+}
