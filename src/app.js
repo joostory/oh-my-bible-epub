@@ -4,11 +4,16 @@ const path = require('path')
 const fs = require('fs')
 const handlebars = require('handlebars')
 
-
+const DIST_DIR = path.join(__dirname, "../dist")
+const BUILD_DIR = path.join(__dirname, "../build")
 const bookTemplate = handlebars.compile(
   fs.readFileSync(path.join(__dirname, "templates", "book.hbs"), "utf-8")
 )
 const VERSIONS = ['GAE', 'NIV']
+
+if (!fs.existsSync(DIST_DIR)) {
+  fs.mkdirSync(DIST_DIR)
+}
 
 const db = new Database('assets/holybible.db', {readonly: true});
 const versionStmt = db.prepare("select vcode, bcode, type, name, chapter_count from bibles where vcode=?")
@@ -17,7 +22,7 @@ const bibleStmt = db.prepare("select * from verses where vcode=? and bcode=? ord
 VERSIONS.forEach(version => {
   console.log(`Build ${version}`)
   new Epub({
-    tempDir: path.join(__dirname, "../build"),
+    tempDir: BUILD_DIR,
     title: "Oh my Bible",
     content: versionStmt.all(version).map(bible => {
       let verses = bibleStmt.all(bible.vcode, bible.bcode)
@@ -38,7 +43,7 @@ VERSIONS.forEach(version => {
         })
       }
     }),
-    output: path.join(__dirname, "../dist", `oh-my-bible-${version}.epub`)
+    output: path.join(DIST_DIR, `oh-my-bible-${version}.epub`)
   })
 })
 
