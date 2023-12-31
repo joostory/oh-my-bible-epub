@@ -1,4 +1,5 @@
-const Database = require('better-sqlite3')
+// const Database = require('better-sqlite3')
+const sqlite3 = require('sqlite3').verbose()
 const Epub = require('epub-gen')
 const path = require('path')
 const fs = require('fs')
@@ -28,49 +29,95 @@ if (!fs.existsSync(DIST_DIR)) {
   fs.mkdirSync(DIST_DIR)
 }
 
-const db = new Database('assets/holybible.db', {readonly: true});
-const bibleStmt = db.prepare("select vcode, bcode, type, name, chapter_count from bibles where vcode=?")
-const versesStmt = db.prepare("select * from verses where vcode=? and bcode=? order by vnum asc")
 
-VERSIONS.map(version => {
-  console.log(`Build ${version.code}`)
-  new Epub({
-    tempDir: BUILD_DIR,
-    title: "Oh my Bible",
-    author: 'GOD',
-    publisher: 'GOD',
-    lang: version.code == 'GAE'? 'ko':'en',
-    tocTitle: version.name,
-    cover: 'https://raw.githubusercontent.com/joostory/holybible/master/dist/images/holybible.png',
-    css: CSS,
-
-    customOpfTemplatePath: path.join(TEMPLATE_DIR, "content.opf.ejs"),
-    customNcxTocTemplatePath: path.join(TEMPLATE_DIR, "toc.ncx.ejs"),
-    customHtmlTocTemplatePath: path.join(TEMPLATE_DIR, "toc.xhtml.ejs"),
-
-    content: bibleStmt.all(version.code).map(bible => {
-      let verses = versesStmt.all(bible.vcode, bible.bcode)
-      let list = []
-      for (let i = 1 ; i <= bible.chapter_count ; i++) {
-        list.push({
-          cnum: i,
-          title: i,
-          verses: verses.filter(v => v.cnum == i)
-        })
+async function getBibles(vcode) {
+  return new Promise((resolve, reject) => {
+    const bibleStmt = db.prepare("select vcode, bcode, type, name, chapter_count from bibles where vcode=?")
+    bibleStmt.all([vcode], (err, rows) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(rows)
       }
-  
-      return {
-        title: bible.name,
-        data: bookTemplate({
-          title: bible.name,
-          id: bible.bcode,
-          list: list
-        })
-      }
-    }),
-    output: path.join(DIST_DIR, `oh-my-bible-${version.code}.epub`),
-    verbose: true
+    })
+    bibleStmt.finalize()
   })
-})
+}
 
-db.close()
+async function getVerses(vcode, bcode) {
+  return new Promise((resolve, reject) => {
+    const versesStmt = db.prepare("select * from verses where vcode=? and bcode=? order by vnum asc")
+    versesStmt.all([vcode, bcode], (err, rows) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(rows)
+      }
+    })
+    versesStmt.finalize()
+  })
+}
+
+
+async function makeEpub(db) {
+  await Promise.all(
+    VERSIONS.map(async version => {
+      console.log(`Build ${version.code}`)
+      const bibles = await getBibles(version.code)
+
+      let verseList = []
+      let content = await Promise.all(
+        bibles.map(async bible => {
+          const verses = await getVerses(version.code, bible.bcode)
+          console.log("bible", bible.name, bible.chapter_count, verses.length)
+
+          let verseList = []
+          for (let i = 1 ; i <= bible.chapter_count ; i++) {
+            verseList.push({
+              cnum: i,
+              title: i,
+              verses: verses.filter(v => v.cnum == i)
+            })
+          }
+
+          return {
+            title: bible.name,
+            data: bookTemplate({
+              title: bible.name,
+              id: bible.bcode,
+              list: verseList
+            })
+          }
+        })
+      )
+
+      new Epub({
+        tempDir: BUILD_DIR,
+        title: "Oh my Bible",
+        author: 'GOD',
+        publisher: 'GOD',
+        lang: version.code == 'GAE'? 'ko':'en',
+        tocTitle: version.name,
+        cover: 'https://raw.githubusercontent.com/joostory/holybible/master/dist/images/holybible.png',
+        css: CSS,
+    
+        customOpfTemplatePath: path.join(TEMPLATE_DIR, "content.opf.ejs"),
+        customNcxTocTemplatePath: path.join(TEMPLATE_DIR, "toc.ncx.ejs"),
+        customHtmlTocTemplatePath: path.join(TEMPLATE_DIR, "toc.xhtml.ejs"),
+    
+        content: content,
+        output: path.join(DIST_DIR, `oh-my-bible-${version.code}.epub`),
+        verbose: true
+      })
+      
+    })
+  )
+  return "OK"
+}
+
+const db = new sqlite3.Database('assets/holybible.db', [sqlite3.OPEN_READONLY])
+makeEpub(db)
+  .finally(() => {
+    console.log("Fianl")
+    db.close()
+  })
