@@ -12,23 +12,24 @@ const bookTemplate = handlebars.compile(
   fs.readFileSync(path.join(TEMPLATE_DIR, "book.hbs"), "utf-8")
 )
 const CSS = fs.readFileSync(path.join(TEMPLATE_DIR, "template.css"), "utf-8")
-const VERSIONS = [
-  {
-    code: 'GAE',
-    name: '개역개정',
-    lang: 'ko'
-  },
-  // {
-  //   code:'NIV',
-  //   name: 'NIV',
-  //   lang: 'en'
-  // }
-]
 
 if (!fs.existsSync(DIST_DIR)) {
   fs.mkdirSync(DIST_DIR)
 }
 
+async function getVersions() {
+  return new Promise((resolve, reject) => {
+    const stmt = db.prepare("select vcode, name from versions")
+    stmt.all((err, rows) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(rows)
+      }
+    })
+    stmt.finalize()
+  })
+}
 
 async function getBibles(vcode) {
   return new Promise((resolve, reject) => {
@@ -60,15 +61,15 @@ async function getVerses(vcode, bcode) {
 
 
 async function makeEpub(db) {
+  const versions = await getVersions()
   await Promise.all(
-    VERSIONS.map(async version => {
-      console.log(`Build ${version.code}`)
-      const bibles = await getBibles(version.code)
+    versions.map(async version => {
+      console.log(`Build ${version.vcode}`)
+      const bibles = await getBibles(version.vcode)
 
-      let verseList = []
       let content = await Promise.all(
         bibles.map(async bible => {
-          const verses = await getVerses(version.code, bible.bcode)
+          const verses = await getVerses(version.vcode, bible.bcode)
           console.log("bible", bible.name, bible.chapter_count, verses.length)
 
           let verseList = []
@@ -96,7 +97,7 @@ async function makeEpub(db) {
         title: "Oh my Bible",
         author: 'GOD',
         publisher: 'GOD',
-        lang: version.code == 'GAE'? 'ko':'en',
+        lang: version.vcode == 'GAE'? 'ko':'en',
         tocTitle: version.name,
         cover: 'https://raw.githubusercontent.com/joostory/holybible/master/dist/images/holybible.png',
         css: CSS,
@@ -106,7 +107,7 @@ async function makeEpub(db) {
         customHtmlTocTemplatePath: path.join(TEMPLATE_DIR, "toc.xhtml.ejs"),
     
         content: content,
-        output: path.join(DIST_DIR, `oh-my-bible-${version.code}.epub`),
+        output: path.join(DIST_DIR, `oh-my-bible-${version.vcode}.epub`),
         verbose: true
       })
       
