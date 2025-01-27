@@ -1,6 +1,6 @@
 {
   "name": "oh-my-bible-epub",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Oh My Bible epub version",
   "main": "src/app.js",
   "scripts": {
