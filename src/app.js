@@ -92,14 +92,14 @@ async function makeEpub(db) {
         })
       )
 
-      new Epub({
+      const epubConfig = {
         tempDir: BUILD_DIR,
-        title: "Oh my Bible",
+        title: `Oh My Bible : ${version.name}`,
         author: 'GOD',
         publisher: 'GOD',
         lang: version.vcode == 'GAE'? 'ko':'en',
         tocTitle: version.name,
-        cover: 'https://raw.githubusercontent.com/joostory/holybible/master/dist/images/holybible.png',
+        cover: 'https://raw.githubusercontent.com/joostory/holybible/main/public/images/holybible.png',
         css: CSS,
     
         customOpfTemplatePath: path.join(TEMPLATE_DIR, "content.opf.ejs"),
@@ -109,8 +109,12 @@ async function makeEpub(db) {
         content: content,
         output: path.join(DIST_DIR, `oh-my-bible-${version.vcode}.epub`),
         verbose: true
-      })
-      
+      }
+
+      new Epub(epubConfig).promise.then(
+        () => console.log(`succeess: ${version.vcode}`),
+        err => console.error(`failed: ${version.vcode}`, err)
+      )
     })
   )
   return "OK"

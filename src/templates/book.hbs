@@ -9,7 +9,7 @@
 
 <body data-type="book">
   <section data-type="content" epub:type="index" data-pdf-bookmark="{{ title }}">
-    <div class="content" id="{{ id }}_index">
+    <div class="chapter-toc" id="{{ id }}_index">
       <ul data-type="chapter">
         {{#each list}}
           <li data-type="sect1"><a href="#chapter{{ cnum }}">{{ title }}</a></li>
@@ -17,6 +17,7 @@
 		  </ol>
     </div>
   </section>
+
   <section data-type="content" data-pdf-bookmark="{{ title }}">
     <div class="content" id="{{ id }}">
       {{#each list}}

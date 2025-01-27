@@ -63,3 +63,17 @@ li[data-type="sect1"] a {
 	text-decoration: none
 }
 
+.chapter-toc {
+	padding: 15px 20px;
+	border: 1px solid #333;
+	border-radius: 10px;
+}
+.chapter-toc ul {
+	display: flex;
+	flex-wrap: wrap;
+	padding: 0;
+}
+.chapter-toc ul li {
+	padding: 5px;
+	list-style: none;
+}
