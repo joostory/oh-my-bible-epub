@@ -24,3 +24,4 @@ jobs:
         with:
           files: |
             dist/*.epub
+          generate_release_notes: true
